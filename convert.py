@@ -288,6 +288,12 @@ def main():
         wav_path = os.path.join(tmp_dir, f"{filename}.wav")
         mp3_path = os.path.join(args.output_dir, f"{filename}.mp3")
 
+        # Skip if MP3 already exists (resume support)
+        if os.path.isfile(mp3_path) and os.path.getsize(mp3_path) > 0:
+            print(f"\n[{ci+1}/{len(chapter_chunks)}] already exists, skipping", flush=True)
+            global_idx += len(chunks)
+            continue
+
         if not args.quiet:
             print(f"\n[{ci+1}/{len(chapter_chunks)}] {title} ({len(chunks)} chunks)", flush=True)
         else:
