@@ -58,13 +58,14 @@ jobs:
         run: |
           mkdir -p voices
           VOICE_NAME="${{ env.VOICE }}"
-          LANG="${VOICE_NAME%%-*}"
+          LANG_FAMILY="${VOICE_NAME%%_*}"
+          FULL_LANG="${VOICE_NAME%%-*}"
           REST="${VOICE_NAME#*-}"
           SPEAKER="${REST%-*}"
           QUALITY="${REST##*-}"
           BASE="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0"
-          curl -sL -o "voices/${VOICE_NAME}.onnx" "${BASE}/${LANG}/${LANG}_${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx?download=true"
-          curl -sL -o "voices/${VOICE_NAME}.onnx.json" "${BASE}/${LANG}/${LANG}_${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx.json?download=true"
+          curl -sL -o "voices/${VOICE_NAME}.onnx" "${BASE}/${LANG_FAMILY}/${FULL_LANG}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx?download=true"
+          curl -sL -o "voices/${VOICE_NAME}.onnx.json" "${BASE}/${LANG_FAMILY}/${FULL_LANG}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx.json?download=true"
           ls -la voices/
 
       - name: Convert to audiobook

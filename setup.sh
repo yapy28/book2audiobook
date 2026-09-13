@@ -99,14 +99,16 @@ ONNX_FILE="${VOICES_DIR}/${DEFAULT_VOICE}.onnx"
 JSON_FILE="${VOICES_DIR}/${DEFAULT_VOICE}.onnx.json"
 
 # Extract voice path components from the name
-# Voice name format: {LANG}-{SPEAKER}-{QUALITY} e.g. en_GB-cori-high
-LANG="${DEFAULT_VOICE%%-*}"
+# Voice name format: {LANG_FAMILY}_{REGION}-{SPEAKER}-{QUALITY} e.g. en_GB-cori-high
+# HuggingFace path: en/en_GB/cori/high/en_GB-cori-high.onnx
+LANG_FAMILY="${DEFAULT_VOICE%%_*}"
+FULL_LANG="${DEFAULT_VOICE%%-*}"
 REST="${DEFAULT_VOICE#*-}"
 SPEAKER="${REST%-*}"
 QUALITY="${REST##*-}"
 
-VOICE_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${SPEAKER}/${QUALITY}/${DEFAULT_VOICE}.onnx"
-JSON_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${SPEAKER}/${QUALITY}/${DEFAULT_VOICE}.onnx.json"
+VOICE_URL="${VOICE_BASE_URL}/${LANG_FAMILY}/${FULL_LANG}/${SPEAKER}/${QUALITY}/${DEFAULT_VOICE}.onnx"
+JSON_URL="${VOICE_BASE_URL}/${LANG_FAMILY}/${FULL_LANG}/${SPEAKER}/${QUALITY}/${DEFAULT_VOICE}.onnx.json"
 
 if [ ! -f "${ONNX_FILE}" ]; then
     echo "Downloading ${DEFAULT_VOICE}.onnx..."
