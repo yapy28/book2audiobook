@@ -2,13 +2,12 @@ name: Convert to Audiobook
 
 on:
   push:
-    paths:
-      - "input/**"
+    branches: [main]
   workflow_dispatch:
     inputs:
       file:
         description: "Filename in input/ to convert"
-        required: true
+        required: false
         default: ""
 
 env:
@@ -20,6 +19,8 @@ jobs:
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Find and rename input file
         id: find_file
@@ -27,31 +28,33 @@ jobs:
           if [ -n "${{ github.event.inputs.file }}" ]; then
             FILE="input/${{ github.event.inputs.file }}"
           else
-            FILE=$(git log --name-only --pretty=format: --diff-filter=A -1 | grep '^input/' | head -1)
-            if [ -z "$FILE" ]; then
-              FILE=$(find input/ -type f ! -name ".gitkeep" | head -1)
-            fi
+            # Find any non-gitkeep file in input/
+            FILE=$(find input/ -type f ! -name ".gitkeep" | head -1)
           fi
           if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
-            echo "ERROR: no input file found"
-            exit 1
+            echo "No input file found. Skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
           fi
-          # Copy to generic name to avoid exposing original filename in logs
           cp "$FILE" /tmp/book.epub
           echo "file=/tmp/book.epub" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Install system dependencies
+        if: steps.find_file.outputs.skip != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y pandoc ffmpeg python3 python3-venv
 
       - name: Set up Python venv and install Piper
+        if: steps.find_file.outputs.skip != 'true'
         run: |
           python3 -m venv /opt/book2audio-venv
           /opt/book2audio-venv/bin/pip install --upgrade pip
           /opt/book2audio-venv/bin/pip install piper-tts numpy
 
       - name: Download Piper voice
+        if: steps.find_file.outputs.skip != 'true'
         run: |
           mkdir -p voices
           VOICE_NAME="${{ env.VOICE }}"
@@ -72,6 +75,7 @@ jobs:
           curl -sL -o "voices/${VOICE_NAME}.onnx.json" "${BASE}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx.json?download=true"
 
       - name: Convert to audiobook
+        if: steps.find_file.outputs.skip != 'true'
         run: |
           INPUT="${{ steps.find_file.outputs.file }}"
           OUTPUT_DIR="audiobook_output"
@@ -79,6 +83,7 @@ jobs:
           /opt/book2audio-venv/bin/python3 convert.py "$INPUT" "$OUTPUT_DIR" --voice "voices/${{ env.VOICE }}.onnx" --quiet
 
       - name: Upload audiobook artifacts
+        if: steps.find_file.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: audiobook
@@ -86,7 +91,7 @@ jobs:
           retention-days: 3
 
       - name: Clean up
-        if: always
+        if: always()
         run: |
           rm -f /tmp/book.epub
           rm -rf audiobook_output voices
