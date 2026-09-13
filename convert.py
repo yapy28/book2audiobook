@@ -42,7 +42,7 @@ def convert_to_markdown(input_file):
         print(f"ERROR: unsupported input format: {ext}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Converting {input_path.name} to markdown with pandoc...", flush=True)
+    print(f"Converting input to markdown with pandoc...", flush=True)
     tmp_md = tempfile.NamedTemporaryFile(suffix=".md", delete=False)
     tmp_md.close()
 
@@ -212,6 +212,10 @@ def main():
         "--skip-sections", nargs="*", default=["Bibliography", "Glossary", "Index"],
         help="Section titles to skip (default: Bibliography Glossary Index)",
     )
+    parser.add_argument(
+        "--quiet", "-q", action="store_true",
+        help="Suppress book content (chapter titles, filenames) from output for privacy",
+    )
     args = parser.parse_args()
 
     if not os.path.isfile(args.input):
@@ -248,7 +252,8 @@ def main():
     skip_set = set(args.skip_sections)
     for title, raw_content in chapters:
         if title in skip_set:
-            print(f"  Skipping: {title}", flush=True)
+            if not args.quiet:
+                print(f"  Skipping: {title}", flush=True)
             continue
         clean = clean_markdown(raw_content)
         chunks = split_into_chunks(clean, args.max_chars)
@@ -279,7 +284,10 @@ def main():
         wav_path = os.path.join(tmp_dir, f"{filename}.wav")
         mp3_path = os.path.join(args.output_dir, f"{filename}.mp3")
 
-        print(f"\n[{ci+1}/{len(chapter_chunks)}] {title} ({len(chunks)} chunks)", flush=True)
+        if not args.quiet:
+            print(f"\n[{ci+1}/{len(chapter_chunks)}] {title} ({len(chunks)} chunks)", flush=True)
+        else:
+            print(f"\n[{ci+1}/{len(chapter_chunks)}] ({len(chunks)} chunks)", flush=True)
 
         wav_file = wave.open(wav_path, "wb")
         wav_file.setnchannels(1)
@@ -325,11 +333,14 @@ def main():
     print(f"  Total size: {total_size / (1024*1024):.1f} MB", flush=True)
     print(f"  Generation time: {elapsed_total/60:.1f} minutes", flush=True)
     print(f"  Total chunks: {total_chunks}", flush=True)
-    print(f"\nFiles:", flush=True)
-    for f in sorted(os.listdir(args.output_dir)):
-        if f.endswith(".mp3"):
-            size = os.path.getsize(os.path.join(args.output_dir, f)) / (1024 * 1024)
-            print(f"  {f} ({size:.1f} MB)", flush=True)
+    if not args.quiet:
+        print(f"\nFiles:", flush=True)
+        for f in sorted(os.listdir(args.output_dir)):
+            if f.endswith(".mp3"):
+                size = os.path.getsize(os.path.join(args.output_dir, f)) / (1024 * 1024)
+                print(f"  {f} ({size:.1f} MB)", flush=True)
+    else:
+        print(f"  Files: {len(chapter_chunks)} MP3s", flush=True)
 
 
 if __name__ == "__main__":

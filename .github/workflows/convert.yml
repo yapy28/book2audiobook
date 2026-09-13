@@ -77,7 +77,7 @@ jobs:
           OUTPUT_DIR="audiobook_output"
           mkdir -p "$OUTPUT_DIR"
           PYTHONPATH="/opt/book2audio-venv/lib/python3.*/site-packages" \
-          python3 convert.py "$INPUT" "$OUTPUT_DIR" --voice "voices/${{ env.VOICE }}.onnx"
+          python3 convert.py "$INPUT" "$OUTPUT_DIR" --voice "voices/${{ env.VOICE }}.onnx" --quiet
 
       - name: Upload audiobook artifacts
         uses: actions/upload-artifact@v4
