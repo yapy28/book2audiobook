@@ -63,7 +63,10 @@ jobs:
           REGION="${REST%%-*}"
           SPEAKER="${REST#*-}"
           QUALITY="high"
-          if [[ "${SPEAKER}" == *-medium ]]; then
+          if [[ "${SPEAKER}" == *-high ]]; then
+            QUALITY="high"
+            SPEAKER="${SPEAKER%-high}"
+          elif [[ "${SPEAKER}" == *-medium ]]; then
             QUALITY="medium"
             SPEAKER="${SPEAKER%-medium}"
           elif [[ "${SPEAKER}" == *-low ]]; then

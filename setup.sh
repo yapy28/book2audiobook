@@ -110,7 +110,10 @@ JSON_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${REGION}/${SPEAKER}/high/${DEFAULT_
 
 # Handle quality suffix in URL path
 QUALITY="high"
-if [[ "${DEFAULT_VOICE}" == *-medium ]]; then
+if [[ "${DEFAULT_VOICE}" == *-high ]]; then
+    QUALITY="high"
+    SPEAKER="${SPEAKER%-high}"
+elif [[ "${DEFAULT_VOICE}" == *-medium ]]; then
     QUALITY="medium"
     SPEAKER="${SPEAKER%-medium}"
 elif [[ "${DEFAULT_VOICE}" == *-low ]]; then
