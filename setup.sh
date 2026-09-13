@@ -99,30 +99,14 @@ ONNX_FILE="${VOICES_DIR}/${DEFAULT_VOICE}.onnx"
 JSON_FILE="${VOICES_DIR}/${DEFAULT_VOICE}.onnx.json"
 
 # Extract voice path components from the name
+# Voice name format: {LANG}-{SPEAKER}-{QUALITY} e.g. en_GB-cori-high
 LANG="${DEFAULT_VOICE%%-*}"
 REST="${DEFAULT_VOICE#*-}"
-REGION="${REST%%-*}"
-SPEAKER="${REST#*-}"
+SPEAKER="${REST%-*}"
+QUALITY="${REST##*-}"
 
-# Build the HuggingFace URL
-VOICE_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${REGION}/${SPEAKER}/high/${DEFAULT_VOICE}.onnx"
-JSON_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${REGION}/${SPEAKER}/high/${DEFAULT_VOICE}.onnx.json"
-
-# Handle quality suffix in URL path
-QUALITY="high"
-if [[ "${DEFAULT_VOICE}" == *-high ]]; then
-    QUALITY="high"
-    SPEAKER="${SPEAKER%-high}"
-elif [[ "${DEFAULT_VOICE}" == *-medium ]]; then
-    QUALITY="medium"
-    SPEAKER="${SPEAKER%-medium}"
-elif [[ "${DEFAULT_VOICE}" == *-low ]]; then
-    QUALITY="low"
-    SPEAKER="${SPEAKER%-low}"
-fi
-
-VOICE_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${DEFAULT_VOICE}.onnx"
-JSON_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${DEFAULT_VOICE}.onnx.json"
+VOICE_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${SPEAKER}/${QUALITY}/${DEFAULT_VOICE}.onnx"
+JSON_URL="${VOICE_BASE_URL}/${LANG}/${LANG}_${SPEAKER}/${QUALITY}/${DEFAULT_VOICE}.onnx.json"
 
 if [ ! -f "${ONNX_FILE}" ]; then
     echo "Downloading ${DEFAULT_VOICE}.onnx..."

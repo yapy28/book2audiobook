@@ -60,22 +60,12 @@ jobs:
           VOICE_NAME="${{ env.VOICE }}"
           LANG="${VOICE_NAME%%-*}"
           REST="${VOICE_NAME#*-}"
-          REGION="${REST%%-*}"
-          SPEAKER="${REST#*-}"
-          QUALITY="high"
-          if [[ "${SPEAKER}" == *-high ]]; then
-            QUALITY="high"
-            SPEAKER="${SPEAKER%-high}"
-          elif [[ "${SPEAKER}" == *-medium ]]; then
-            QUALITY="medium"
-            SPEAKER="${SPEAKER%-medium}"
-          elif [[ "${SPEAKER}" == *-low ]]; then
-            QUALITY="low"
-            SPEAKER="${SPEAKER%-low}"
-          fi
+          SPEAKER="${REST%-*}"
+          QUALITY="${REST##*-}"
           BASE="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0"
-          curl -sL -o "voices/${VOICE_NAME}.onnx" "${BASE}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx?download=true"
-          curl -sL -o "voices/${VOICE_NAME}.onnx.json" "${BASE}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx.json?download=true"
+          curl -sL -o "voices/${VOICE_NAME}.onnx" "${BASE}/${LANG}/${LANG}_${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx?download=true"
+          curl -sL -o "voices/${VOICE_NAME}.onnx.json" "${BASE}/${LANG}/${LANG}_${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx.json?download=true"
+          ls -la voices/
 
       - name: Convert to audiobook
         if: steps.find_file.outputs.skip != 'true'
