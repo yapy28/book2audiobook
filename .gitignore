@@ -1,0 +1,26 @@
+# Input files (books to convert)
+input/*
+!input/.gitkeep
+
+# Output files (generated audiobooks)
+output/
+audiobook_output/
+
+# Voice models (downloaded by setup.sh, large files)
+voices/
+*.onnx
+*.onnx.json
+
+# Python venvs
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.wav
+*.tmp

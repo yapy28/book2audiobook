@@ -1,0 +1,89 @@
+name: Convert to Audiobook
+
+on:
+  push:
+    paths:
+      - "input/**"
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Filename in input/ to convert"
+        required: true
+        default: ""
+
+env:
+  VOICE: en_GB-cori-high
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find input file
+        id: find_file
+        run: |
+          if [ -n "${{ github.event.inputs.file }}" ]; then
+            FILE="input/${{ github.event.inputs.file }}"
+          else
+            # Find the most recently changed file in input/
+            FILE=$(git log --name-only --pretty=format: --diff-filter=A -1 | grep '^input/' | head -1)
+            if [ -z "$FILE" ]; then
+              # Fallback: find any file in input/
+              FILE=$(find input/ -type f ! -name ".gitkeep" | head -1)
+            fi
+          fi
+          if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
+            echo "ERROR: no input file found in input/"
+            exit 1
+          fi
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+          echo "Converting: $FILE"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc ffmpeg python3 python3-venv
+
+      - name: Set up Python venv and install Piper
+        run: |
+          python3 -m venv /opt/book2audio-venv
+          /opt/book2audio-venv/bin/pip install --upgrade pip
+          /opt/book2audio-venv/bin/pip install piper-tts numpy
+
+      - name: Download Piper voice
+        run: |
+          mkdir -p voices
+          VOICE_NAME="${{ env.VOICE }}"
+          LANG="${VOICE_NAME%%-*}"
+          REST="${VOICE_NAME#*-}"
+          REGION="${REST%%-*}"
+          SPEAKER="${REST#*-}"
+          QUALITY="high"
+          if [[ "${SPEAKER}" == *-medium ]]; then
+            QUALITY="medium"
+            SPEAKER="${SPEAKER%-medium}"
+          elif [[ "${SPEAKER}" == *-low ]]; then
+            QUALITY="low"
+            SPEAKER="${SPEAKER%-low}"
+          fi
+          BASE="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0"
+          curl -sL -o "voices/${VOICE_NAME}.onnx" "${BASE}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx?download=true"
+          curl -sL -o "voices/${VOICE_NAME}.onnx.json" "${BASE}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx.json?download=true"
+          ls -la voices/
+
+      - name: Convert to audiobook
+        run: |
+          INPUT="${{ steps.find_file.outputs.file }}"
+          OUTPUT_DIR="audiobook_output"
+          mkdir -p "$OUTPUT_DIR"
+          PYTHONPATH="/opt/book2audio-venv/lib/python3.*/site-packages" \
+          python3 convert.py "$INPUT" "$OUTPUT_DIR" --voice "voices/${{ env.VOICE }}.onnx"
+
+      - name: Upload audiobook artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: audiobook
+          path: audiobook_output/*.mp3
+          retention-days: 3
