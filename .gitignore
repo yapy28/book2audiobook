@@ -1,7 +1,3 @@
-# Input files (books to convert)
-input/*
-!input/.gitkeep
-
 # Output files (generated audiobooks)
 output/
 audiobook_output/
