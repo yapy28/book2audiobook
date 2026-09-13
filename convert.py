@@ -13,12 +13,16 @@ import wave
 from pathlib import Path
 
 # Add local venv to path so we can import piper
-_VENV_SITE = os.path.expanduser("~/.local/share/book2audio/venv/lib")
-if os.path.isdir(_VENV_SITE):
-    for entry in os.listdir(_VENV_SITE):
-        p = os.path.join(_VENV_SITE, entry, "site-packages")
-        if os.path.isdir(p):
-            sys.path.insert(0, p)
+_VENV_PATHS = [
+    os.path.expanduser("~/.local/share/book2audio/venv/lib"),
+    "/opt/book2audio-venv/lib",
+]
+for _venv in _VENV_PATHS:
+    if os.path.isdir(_venv):
+        for entry in os.listdir(_venv):
+            p = os.path.join(_venv, entry, "site-packages")
+            if os.path.isdir(p):
+                sys.path.insert(0, p)
 
 try:
     from piper import PiperVoice
