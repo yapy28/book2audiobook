@@ -21,25 +21,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Find input file
+      - name: Find and rename input file
         id: find_file
         run: |
           if [ -n "${{ github.event.inputs.file }}" ]; then
             FILE="input/${{ github.event.inputs.file }}"
           else
-            # Find the most recently changed file in input/
             FILE=$(git log --name-only --pretty=format: --diff-filter=A -1 | grep '^input/' | head -1)
             if [ -z "$FILE" ]; then
-              # Fallback: find any file in input/
               FILE=$(find input/ -type f ! -name ".gitkeep" | head -1)
             fi
           fi
           if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
-            echo "ERROR: no input file found in input/"
+            echo "ERROR: no input file found"
             exit 1
           fi
-          echo "file=$FILE" >> $GITHUB_OUTPUT
-          echo "Converting: $FILE"
+          # Copy to generic name to avoid exposing original filename in logs
+          cp "$FILE" /tmp/book.epub
+          echo "file=/tmp/book.epub" >> $GITHUB_OUTPUT
 
       - name: Install system dependencies
         run: |
@@ -71,7 +70,6 @@ jobs:
           BASE="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0"
           curl -sL -o "voices/${VOICE_NAME}.onnx" "${BASE}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx?download=true"
           curl -sL -o "voices/${VOICE_NAME}.onnx.json" "${BASE}/${LANG}/${LANG}_${REGION}/${SPEAKER}/${QUALITY}/${VOICE_NAME}.onnx.json?download=true"
-          ls -la voices/
 
       - name: Convert to audiobook
         run: |
@@ -87,3 +85,9 @@ jobs:
           name: audiobook
           path: audiobook_output/*.mp3
           retention-days: 3
+
+      - name: Clean up
+        if: always
+        run: |
+          rm -f /tmp/book.epub
+          rm -rf audiobook_output voices
